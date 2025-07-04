@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>YouTube Downloader</title>
+</head>
+<body>
+    <h2>YouTube Downloader</h2>
+    <form method="post">
+        <label>YouTube URL:</label>
+        <input type="text" name="url" required><br><br>
+
+        <label>Select Format:</label>
+        <select name="format">
+            <option value="mp4">Video (MP4)</option>
+            <option value="mp3">Audio (MP3)</option>
+        </select><br><br>
+
+        <button type="submit">Download</button>
+    </form>
+
+    {% if download_url %}
+        <h3>File ready:</h3>
+        <a href="{{ download_url }}">Click here to download</a>
+    {% endif %}
+</body>
+</html>
