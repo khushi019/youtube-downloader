@@ -1,3 +1,15 @@
+"""
+For Windows
+Go to: https://www.gyan.dev/ffmpeg/builds/
+Download the "Release full build" ZIP
+Extract it somewhere, e.g., C:\ffmpeg
+Add the path C:\ffmpeg\bin to your System Environment Variables → PATH
+Restart your terminal or computer 
+
+For mac or linux
+sudo apt install ffmpeg
+brew install ffmpeg
+"""
 blinker==1.9.0
 click==8.2.1
 colorama==0.4.6
