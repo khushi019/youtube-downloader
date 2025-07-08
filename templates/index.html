@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <title>YouTube Downloader</title>
@@ -9,6 +10,7 @@
       background: linear-gradient(to right, #ffefba, #ffffff);
       font-family: 'Quicksand', sans-serif;
     }
+
     .card {
       background: #fff;
       border-radius: 16px;
@@ -17,31 +19,38 @@
       max-width: 600px;
       margin: 50px auto;
     }
+
     .form-control,
     .form-select {
       border-radius: 10px;
     }
+
     .btn-primary {
       background-color: #ff4e50;
       border: none;
       border-radius: 8px;
     }
+
     .btn-primary:hover {
       background-color: #e83e3e;
     }
+
     .btn-success {
       border-radius: 8px;
     }
+
     .progress {
       height: 20px;
       border-radius: 10px;
       overflow: hidden;
     }
+
     #progressSection {
       display: none;
     }
   </style>
 </head>
+
 <body>
   <div class="card">
     <h2 class="text-center mb-4 text-dark">🎥 YouTube Downloader</h2>
@@ -49,14 +58,8 @@
     <form method="post" id="downloadForm">
       <div class="mb-3">
         <label for="url" class="form-label">YouTube URL</label>
-        <input
-          type="text"
-          name="url"
-          id="url"
-          class="form-control"
-          placeholder="e.g. https://youtube.com/..."
-          required
-        />
+        <input type="text" name="url" id="url" class="form-control" placeholder="e.g. https://youtube.com/..."
+          required />
       </div>
 
       <div class="mb-3">
@@ -73,58 +76,101 @@
 
       <div class="mt-4" id="progressSection">
         <div class="progress">
-          <div
-            class="progress-bar progress-bar-striped progress-bar-animated bg-danger"
-            id="progressBar"
-            style="width: 0%"
-          >
+          <div class="progress-bar progress-bar-striped progress-bar-animated bg-danger" id="progressBar"
+            style="width: 0%">
             0%
           </div>
         </div>
-        <p class="text-center mt-2">Downloading...</p>
+        <p class="text-center mt-2" id="downloadName">Downloading...</p>
       </div>
     </form>
 
     {% if error %}
     <div class="alert alert-danger mt-4 text-center" role="alert">
-      ❌ Error: {{ error }}
+      Error: {{ error }}
     </div>
     {% endif %}
 
     {% if download_url %}
     <div class="alert alert-success mt-4 text-center" role="alert">
-      ✅ Your file is ready!<br />
+      Your file is ready!<br />
       <a href="{{ download_url }}" class="btn btn-success mt-2">Download Now</a>
     </div>
     {% endif %}
   </div>
 
   <script>
-    document.getElementById('downloadForm').addEventListener('submit', () => {
-      // Hide previous messages immediately
-      const successDiv = document.querySelector('.alert-success');
-      if (successDiv) successDiv.style.display = 'none';
-      const errorDiv = document.querySelector('.alert-danger');
-      if (errorDiv) errorDiv.style.display = 'none';
+    document.getElementById('downloadForm').addEventListener('submit', function (e) {
+      e.preventDefault();
 
-      // Reset and show progress bar
+      const url = document.getElementById('url').value;
+      const format = document.querySelector('select[name="format"]').value;
+
+      // Reset progress bar
       const progressBar = document.getElementById('progressBar');
+      const downloadName = document.getElementById('downloadName');
       progressBar.style.width = '0%';
       progressBar.innerText = '0%';
       document.getElementById('progressSection').style.display = 'block';
 
-      // Simulate progress bar increment
+      // Hide old messages
+      document.querySelectorAll('.alert').forEach(el => el.remove());
+
+      // Simulate progress bar animation
       let width = 0;
-      const interval = setInterval(() => {
-        if (width >= 90) {
-          clearInterval(interval);
-        } else {
-          width += Math.random() * 2 + 1; // increase by 2-5%
+      const simulate = setInterval(() => {
+        if (width < 90) {
+          width += Math.random() * 2;
           progressBar.style.width = width.toFixed(0) + '%';
           progressBar.innerText = width.toFixed(0) + '%';
         }
       }, 1000);
+
+      // Start download
+      fetch('/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `url=${encodeURIComponent(url)}&format=${encodeURIComponent(format)}`
+      })
+        .then(res => res.json())
+        .then(data => {
+          const taskId = data.task_id;
+
+          // Poll status
+          const poll = setInterval(() => {
+            fetch(`/status/${taskId}`)
+              .then(res => res.json())
+              .then(status => {
+                if (status.status === 'done') {
+                  clearInterval(poll);
+                  clearInterval(simulate);
+                  progressBar.style.width = '100%';
+                  progressBar.innerText = '100%';
+                  downloadName.innerText='Downloaded!!';
+
+                  const alert = document.createElement('div');
+                  alert.className = 'alert alert-success mt-4 text-center';
+                  alert.innerHTML = `Your file is ready!<br><a href="/download/${status.file}" class="btn btn-success mt-2">Download Now</a>`;
+                  document.querySelector('.card').appendChild(alert);
+                } else if (status.status === 'error') {
+                  clearInterval(poll);
+                  clearInterval(simulate);
+                  progressBar.style.width = '0%';
+                  progressBar.innerText = '0%';
+                  downloadName.innerText='Downloading...';
+
+
+                  const alert = document.createElement('div');
+                  alert.className = 'alert alert-danger mt-4 text-center';
+                  alert.innerText = `Error: ${status.error}`;
+                  document.querySelector('.card').appendChild(alert);
+                }
+              });
+          }, 2000);
+        });
     });
   </script>
+
 </body>
+
 </html>
