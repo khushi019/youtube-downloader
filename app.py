@@ -33,7 +33,6 @@ def schedule_deletion(path, delay=1800):
             print(f"[Failed to delete] {path}: {e}")
     threading.Timer(delay, delete).start()
 
-
 def run_download(task_id, url, format_choice):
     try:
         unique_id = task_id
